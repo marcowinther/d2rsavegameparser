@@ -26,4 +26,4 @@ import java.util.Map;
  * @param itemStatCostsByCode All {@link ItemStatCost} mapped on the code.
  * @param genericPropertiesByCode All generic properties mapped on the code.
  */
-record ItemStatCostAndProperties(Map<String, ItemStatCost> itemStatCostsByCode, Map<String, String> genericPropertiesByCode) { }
+public record ItemStatCostAndProperties(Map<String, ItemStatCost> itemStatCostsByCode, Map<String, String> genericPropertiesByCode) { }

@@ -34,10 +34,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.slf4j.LoggerFactory.getLogger;
 
 class CharacterParserTest {
-    private static final Logger log = getLogger(CharacterParser.class);
 
     private final CharacterParser cut = new CharacterParser(false);
 
@@ -47,7 +45,6 @@ class CharacterParserTest {
         final ByteBuffer buffer = TestCommons.getBuffer("1.6.84219/DRUNPala.d2s");
 
         CharacterParser parser = new CharacterParser(true);
-        log.info("output: {}", parser.parse(buffer));
     }
 
     @Test
@@ -316,7 +313,6 @@ class CharacterParserTest {
                 .filter(item -> item.itemName().startsWith(itemName))
                 .toList();
 
-        log.info("verifying there is one item with name {} in {}", itemName, saveGameLocation);
 
         assertThat(questItems).hasSize(1);
     }

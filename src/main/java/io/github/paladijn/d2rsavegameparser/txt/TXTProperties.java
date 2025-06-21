@@ -20,10 +20,8 @@ package io.github.paladijn.d2rsavegameparser.txt;
 import io.github.paladijn.d2rsavegameparser.internal.parser.ParseHelper;
 import io.github.paladijn.d2rsavegameparser.model.ItemProperty;
 import io.github.paladijn.d2rsavegameparser.parser.ParseException;
-import org.slf4j.Logger;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Singleton instance of the Diablo II .txt files extracted from the game files. This usually is performed for local modding
@@ -45,7 +42,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Paladijn
  */
 public final class TXTProperties {
-    private static final Logger log = getLogger(TXTProperties.class);
 
     private static TXTProperties INSTANCE;
 
@@ -256,7 +252,7 @@ public final class TXTProperties {
     }
 
     private void parseMagicSuffix() {
-        try (InputStream resource = new FileInputStream("txt/magicsuffix.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("magicsuffix.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.startsWith("Name")) {
                     magicSuffixes.add(new MagicAffix(magicSuffixes.size(), line));
@@ -268,7 +264,7 @@ public final class TXTProperties {
     }
 
     private void parseMagicPrefix() {
-        try (InputStream resource = new FileInputStream("txt/magicprefix.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("magicprefix.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.startsWith("Name")) {
                     magicPrefixes.add(new MagicAffix(magicPrefixes.size(), line));
@@ -280,7 +276,7 @@ public final class TXTProperties {
     }
 
     private void parseRareSuffix() {
-        try (InputStream resource = new FileInputStream("txt/raresuffix.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("raresuffix.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.startsWith("name")) {
                     String prefix = line.substring(0, line.indexOf("\t"));
@@ -293,7 +289,7 @@ public final class TXTProperties {
     }
 
     private void parseRarePrefix() {
-        try (InputStream resource = new FileInputStream("txt/rareprefix.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("rareprefix.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.startsWith("name")) {
                     String prefix = line.substring(0, line.indexOf("\t"));
@@ -306,14 +302,13 @@ public final class TXTProperties {
     }
 
     private void parseUniqueItems() {
-        try (InputStream resource = new FileInputStream("txt/uniqueitems.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("uniqueitems.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.startsWith("index") && line.length() > 90) { // skip the headers and comments
                     UniqueItem uniqueItem = new UniqueItem(line);
                     if (uniqueItem.isEnabled()) {
                         uniqueItemById.put(uniqueItem.getId(), uniqueItem);
                     } else {
-                        log.debug("skipping disabled unique {}", uniqueItem);
                     }
                 }
             });
@@ -323,7 +318,7 @@ public final class TXTProperties {
     }
 
     private void parseMisc() {
-        try (InputStream resource = new FileInputStream("txt/misc.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("misc.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isBlank() && !line.startsWith("name\t") && !line.startsWith("Expansion")) {
                     final MiscStats miscStats = new MiscStats(line);
@@ -336,7 +331,7 @@ public final class TXTProperties {
     }
 
     private void parseArmor() {
-        try (InputStream resource = new FileInputStream("txt/armor.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("armor.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isBlank() && !line.startsWith("name\t") && !line.startsWith("Expansion")) {
                     final ArmorStats armorStats = new ArmorStats(line);
@@ -349,7 +344,7 @@ public final class TXTProperties {
     }
 
     private void parseWeapons() {
-        try (InputStream resource = new FileInputStream("txt/weapons.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("weapons.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isBlank() && !line.startsWith("name\t") && !line.startsWith("Expansion")) {
                     final WeaponStats weaponStats = new WeaponStats(line);
@@ -362,7 +357,7 @@ public final class TXTProperties {
     }
 
     private void parseSets() {
-        try (InputStream resource = new FileInputStream("txt/sets.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("sets.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isBlank() && !line.startsWith("index\t") && !line.startsWith("Expansion")) {
                     SetData set = new SetData(line, setIDs, new ItemStatCostAndProperties(itemStatcostsByCode, genericPropertiesByCode));
@@ -375,7 +370,7 @@ public final class TXTProperties {
     }
 
     private void parseSetItems() {
-        try (InputStream resource = new FileInputStream("txt/setitems.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("setitems.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 String[] blocks = line.split("\t");
                 if (blocks.length > 2 && ParseHelper.isNumeric(blocks[1])) {
@@ -393,7 +388,7 @@ public final class TXTProperties {
     }
 
     private void parseRunewords() {
-        try (InputStream resource = new FileInputStream("txt/runes.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("runes.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isEmpty() && !line.startsWith("Name")) {
                     runewords.add(new Runeword(line));
@@ -406,7 +401,7 @@ public final class TXTProperties {
     }
 
     private void parseProperties() {
-        try (InputStream resource = new FileInputStream("txt/properties.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("properties.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 String[] blocks = line.split("\t");
                 if (blocks.length > 1 && !"code".equals(blocks[0])) {
@@ -419,7 +414,7 @@ public final class TXTProperties {
     }
 
     private void parseItemStatCost() {
-        try (InputStream resource = new FileInputStream("txt/itemstatcost.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("itemstatcost.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isEmpty() && !line.startsWith("Stat\t*ID\t")) {
                     final ItemStatCost isc = new ItemStatCost(line);
@@ -433,7 +428,7 @@ public final class TXTProperties {
     }
 
     private void parseGems() {
-        try (InputStream resource = new FileInputStream("txt/gems.txt")) {
+        try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("gems.txt")) {
             new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines().forEach(line -> {
                 if (!line.isBlank() && !line.startsWith("name") && !line.startsWith("Expansion")) {
                     final GemAndRuneStats gemsAndRuneStats = new GemAndRuneStats(line, new ItemStatCostAndProperties(itemStatcostsByCode, genericPropertiesByCode));
@@ -451,10 +446,8 @@ public final class TXTProperties {
                 if (!line.isBlank() && !line.startsWith("name")) {
                     String[] blocks = line.split("\t");
                     if (blocks.length != 2) {
-                        log.error("incorrect line in tcbyitemname: {}", line);
                     } else {
                         if (!ParseHelper.isNumeric(blocks[1])) {
-                            log.error("could not read numeric TC from line {}", line);
                         } else {
                             treasureClassByItem.put(blocks[0].toLowerCase(), Integer.parseInt(blocks[1]));
                         }

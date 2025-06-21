@@ -37,7 +37,6 @@ import io.github.paladijn.d2rsavegameparser.model.StarterAttributes;
 import io.github.paladijn.d2rsavegameparser.model.WaypointStatus;
 import io.github.paladijn.d2rsavegameparser.txt.SetData;
 import io.github.paladijn.d2rsavegameparser.txt.TXTProperties;
-import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -46,7 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * This is the main entrypoint of the library. It will accept a {@link ByteBuffer} of a savegame file of the Diablo II Resurrected action RPG by Blizzard Entertainment and represent
@@ -60,7 +58,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Paladijn
  */
 public final class CharacterParser {
-    private static final Logger log = getLogger(CharacterParser.class);
 
     private final ItemParser itemParser;
 
@@ -126,7 +123,6 @@ public final class CharacterParser {
         characterBuilder.name(new String(nameBytes).trim());
 
         if (buffer.limit() == 335) {
-            log.info("This is a newly created character, so we'll only supply the starter attributes until the game triggers another save.");
             characterBuilder.attributes(StarterAttributes.getStarterAttributesByClass(characterType));
             return characterBuilder.build();
         }
@@ -175,7 +171,6 @@ public final class CharacterParser {
 
         // (available) skills are 30 bytes after the skillindex plus the 2 header bytes
         int itemIndex = skillIndex + 32;
-        log.debug("parsing character items");
         final List<Item> items = itemParser.parseItems(buffer, itemIndex, buffer.limit());
         final int minimalItemBytes = 9 * items.size(); // items have a minimum length of 9 bytes.
 
@@ -220,14 +215,12 @@ public final class CharacterParser {
             }
 
             if (ironIndex > mercItemIndex) {
-                log.debug("parsing mercenary at index {}", mercItemIndex);
                 final List<Item> mercItems = itemParser.parseItems(buffer, mercItemIndex, ironIndex);
                 final HashMap<String, Integer> mercSetCounts = getEquippedSetCounts(getEquippedSetItems(mercItems));
                 final List<Item> mercAdjustedItems = removeSetBonuses(mercItems, mercSetCounts);
                 mercenaryBuilder.items(mercAdjustedItems);
                 characterBuilder.mercenary(mercenaryBuilder.build());
             } else {
-                log.debug("No mercenary found");
             }
 
             // parse the iron golem item
@@ -250,10 +243,8 @@ public final class CharacterParser {
             if ("JM".equals(new String(deadBodyBytes))) {
                 final short deadIndicator = buffer.getShort(i + 2);
                 if (deadIndicator == 1) {
-                    log.debug("dead body items found at index {}", i);
                     characterBuilder.deadBodyItems(itemParser.parseItems(buffer, i + 16, buffer.limit()));
                 } else {
-                    log.debug("No dead body items found");
                 }
                 break;
             }
@@ -480,14 +471,12 @@ public final class CharacterParser {
             if (item.location() == ItemLocation.EQUIPPED) {
                 count = setCounts.getOrDefault(item.setName(), 1);
             } else {
-                log.debug("Item {} not equipped, not adding set bonuses by resetting the set item count to 1 for this one", item.itemName());
                 count = 1;
             }
 
             List<ItemProperty> keepThese = item.properties().stream()
                     .filter(itemProperty -> itemProperty.qualityFlag() <= count)
                     .toList();
-            log.debug("adjusting set {} item {}, remaining properties: {}", item.setName(), item.itemName(), keepThese.size());
 
             adjustedItems.add(new Item(item.isIdentified(), item.isSocketed(), item.isEar(),
                     item.isSimple(), item.isEthereal(), item.isPersonalized(), item.isRuneword(), item.isThrown(), item.isTwoHanded(),

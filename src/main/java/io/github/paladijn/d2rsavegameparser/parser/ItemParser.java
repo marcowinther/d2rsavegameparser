@@ -36,14 +36,12 @@ import io.github.paladijn.d2rsavegameparser.txt.SetItem;
 import io.github.paladijn.d2rsavegameparser.txt.TXTProperties;
 import io.github.paladijn.d2rsavegameparser.txt.UniqueItem;
 import io.github.paladijn.d2rsavegameparser.txt.WeaponStats;
-import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Internal parser for Diablo II {@link Item}s, either in as a full list or a singular one from an array of bytes.
@@ -51,7 +49,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Paladijn
  */
 final class ItemParser {
-    private static final Logger log = getLogger(ItemParser.class);
 
     private final boolean printItemBytes;
 
@@ -89,7 +86,6 @@ final class ItemParser {
         }
 
         int cntItems = buffer.getShort(start + 2);
-        log.debug("Total items: {}", cntItems);
 
         final BitReader itemData = new BitReader(itemBytes);
         for (int i = 0; i < cntItems; i++) {
@@ -165,7 +161,6 @@ final class ItemParser {
                 .treasureClass(txtProperties.getTreasureClass(itemScaffolding.getItemName()))
                 .itemType(itemType);
 
-        log.debug("code {} [{}, {}]", itemScaffolding.getCode(), itemScaffolding.getType(), itemScaffolding.getType2());
 
         if (!isSimple) {
             parseExtendedPart1(itemBuilder, itemScaffolding, br);
@@ -183,13 +178,11 @@ final class ItemParser {
             itemBuilder.addProperties(txtProperties.getGemsAndRunesByCode(code).getAllProperties());
         }
 
-        log.debug("item {} done, moving to the next", itemScaffolding.getItemName());
         // extra skip for special cases
         if (isSimple
                 && "ques".equals(itemScaffolding.getType())
                 && ("j34".equals(code) || "bkd".equals(code))
                 && br.bitsToNextBoundary() == 0) {
-            log.info("Skipping 8 extra bits on {} for specific quest items such as a Jade Figurine as they end on a boundary and result in parse errors when not skipping a byte.", itemScaffolding.getItemName());
             br.skip(8);
         }
         br.moveToNextByteBoundary();
@@ -198,12 +191,10 @@ final class ItemParser {
         boolean printBytesDueToError = false;
 
         if (result.prefixIds().stream().anyMatch(id -> id == 2047)) {
-            log.error("Item has at least one unknown prefixId at 2047, likely an adjusted or hacked item!");
             printBytesDueToError = true;
         }
 
         if (result.suffixIds().stream().anyMatch(id -> id == 2047)) {
-            log.error("Item has at least one unknown suffixId at 2047, likely an adjusted or hacked item!");
             printBytesDueToError = true;
         }
 
@@ -234,11 +225,9 @@ final class ItemParser {
         br.moveToNextByteBoundary();
 
         // we only log the contents for now, perhaps store this as item data in the future
-        log.info("Ear found of lvl {} {} {}", characterLevel, CharacterType.values()[characterClass], sbFormerOwner);
     }
 
     private void parseExtendedPart1(Item.ItemBuilder itemBuilder, ItemScaffolding itemScaffolding, BitReader br) {
-        log.debug("parseExtendedPart1 index: {}", br.getPositionInBits());
         itemScaffolding.setCntFilledSockets(br.readShort(3));
         itemBuilder.cntFilledSockets(itemScaffolding.getCntFilledSockets());
 
@@ -257,7 +246,6 @@ final class ItemParser {
 
         if (br.readShort(1) == 1) {// class specific item flag
             int classSpecificModInfo = br.readInt(11);
-            log.debug("class specific item flag {}", classSpecificModInfo);
             // we won't do anything with these bits. They are used in-game to determine if you can equip it on your character.
         }
 
@@ -271,7 +259,6 @@ final class ItemParser {
             case UNIQUE -> parseUnique(itemBuilder, br);
             case CRAFT -> parseCrafted(itemBuilder, itemScaffolding, br);
             case NONE, UNKNOWN -> {
-                log.error("No or unknown quality for this item: {}", itemBuilder.build());
                 throw new ParseException("unknown quality for item");
             }
         }
@@ -279,7 +266,6 @@ final class ItemParser {
         if (itemScaffolding.isRuneword()) {
             br.skip(12); // TODO document what these are for, or always skip 16.
             br.skip(4);
-            log.debug("index after skipping 16 bits in runeword: {}", br.getPositionInBits());
         }
 
         if (itemScaffolding.isPersonalized()) {
@@ -288,7 +274,6 @@ final class ItemParser {
     }
 
     private void parseExtendedPart2(Item.ItemBuilder itemBuilder, ItemScaffolding itemScaffolding, BitReader br) {
-        log.debug("parseExtendedPart2 index: {}", br.getPositionInBits());
 
         switch (itemScaffolding.getItemType()) {
             case ItemType.ARMOR -> parseArmorStats(itemBuilder, br);
@@ -299,7 +284,6 @@ final class ItemParser {
         if (itemScaffolding.isSocketed()) {
             short cntSockets = br.readShort(4);
             itemBuilder.cntSockets(cntSockets);
-            log.debug("read total sockets: in item {}", cntSockets);
         }
 
         int[] lSet = new int[5];
@@ -325,7 +309,6 @@ final class ItemParser {
         }
 
         if (itemScaffolding.isRuneword()) {
-            log.debug("Looking up runeword name");
             final String runes = itemScaffolding.getSocketedItems().stream()
                     .map(item -> item.itemName().replace(" Rune", ""))
                     .collect(Collectors.joining());
@@ -375,7 +358,6 @@ final class ItemParser {
     }
 
     private static void adjustForEthereal(Item.ItemBuilder itemBuilder, ItemScaffolding itemScaffolding) {
-        log.debug("Ethereal item, adjusting str/dex req");
         if (itemScaffolding.getReqStr() > 0) {
             itemBuilder.reqStr(itemScaffolding.getReqStr() - 10);
         }
@@ -441,7 +423,6 @@ final class ItemParser {
             itemBuilder.guid(guid);
         } else {
             // this broke the scroll of Inifuss, as it pushed 1 bit into the next item. leaving this off for now to see if it breaks anything
-            log.warn("If something breaks, it's caused by not skipping 2-3 bits below this line on item {}.", itemScaffolding.getItemName());
             if (!itemScaffolding.getCode().equals("bks")) {
                 br.skip(3);
             }
@@ -449,7 +430,6 @@ final class ItemParser {
     }
 
     private void parseSocketedItems(Item.ItemBuilder itemBuilder, ItemScaffolding itemScaffolding, BitReader br) {
-        log.debug("parsing {} filled sockets", itemScaffolding.getCntFilledSockets());
         List<Item> socketedItems = new ArrayList<>();
 
         br.moveToNextByteBoundary();
@@ -492,11 +472,9 @@ final class ItemParser {
         List<ItemProperty> properties = new ArrayList<>();
         int rootProp = br.readInt(9);
         if (rootProp == ParseHelper.PROPERTY_END) {
-            log.debug("skipping properties due to value 511");
         }
         while (rootProp != ParseHelper.PROPERTY_END) {
             ItemProperty itemProperty = parseItemProperty(br, rootProp, qflag);
-            log.debug("rootprop: {}, property: {}", rootProp, itemProperty);
             properties.add(itemProperty);
             if (rootProp == ParseHelper.PROPERTY_PHYS_MAX_DMG
                     || rootProp == ParseHelper.PROPERTY_FIRE_MIN_DMG
@@ -518,7 +496,6 @@ final class ItemParser {
         int length = itemStatCost.getSaveBits();
         int saveAdd = itemStatCost.getSaveAdd();
 
-        log.debug("rootProp {}, readLength: {}, saveAdd: {}", rootProp, length, saveAdd);
 
         if (rootProp == ParseHelper.PROPERTY_SKILL_GET_HIT
                 || rootProp == ParseHelper.PROPERTY_SKILL_DEATH
@@ -592,11 +569,9 @@ final class ItemParser {
             itemBuilder.addPrefixId(prefix);
             itemScaffolding.setPrefixIdSize(itemScaffolding.getPrefixIdSize() + 1);
             if (prefix == 2047) {
-                log.error("Rare prefix (2047) too high! Very likely an adjusted/hacked item that lacks a prefix ingame.");
             } else {
                 final MagicAffix magicPrefix = txtProperties.getMagicPrefix(prefix);
                 if (magicPrefix.getReqLvl() > reqLvl) {
-                    log.debug("new reqLvl {} due to prefix {}", reqLvl, magicPrefix);
                     reqLvl = magicPrefix.getReqLvl();
                 }
             }
@@ -610,11 +585,9 @@ final class ItemParser {
             itemBuilder.addSuffixId(suffix);
             itemScaffolding.setSuffixIdSize(itemScaffolding.getSuffixIdSize() + 1);
             if (suffix == 2047) {
-                log.error("Rare suffix (2047) too high! Very likely an adjusted/hacked item that lacks a suffix ingame.");
             } else {
                 final MagicAffix magicSuffix = txtProperties.getMagicSuffix(suffix);
                 if (magicSuffix.getReqLvl() > reqLvl) {
-                    log.debug("new reqLvl {} due to suffix {}", reqLvl, magicSuffix);
                     reqLvl = magicSuffix.getReqLvl();
                 }
             }
@@ -663,7 +636,6 @@ final class ItemParser {
         if (prefix != 0) {
             itemBuilder.addPrefixId(prefix);
             if (prefix == 2047) {
-                log.error("Prefix (2047) too high! Very likely an adjusted/hacked item that lacks a prefix ingame.");
             } else {
                 final MagicAffix magicPrefix = txtProperties.getMagicPrefix(prefix);
                 itemName = "%s %s".formatted(magicPrefix.getName(), itemName);
@@ -677,7 +649,6 @@ final class ItemParser {
         if (suffix != 0) {
             itemBuilder.addSuffixId(suffix);
             if (suffix == 2047) {
-                log.error("Suffix (2047) too high! Very likely an adjusted/hacked item that lacks a suffix ingame.");
             } else {
                 final MagicAffix magicSuffix = txtProperties.getMagicSuffix(suffix);
                 itemName = "%s %s".formatted(itemName, magicSuffix.getName());
@@ -695,12 +666,10 @@ final class ItemParser {
                 .reqLvl(reqLvl)
                 .restrictedToClass(restricted);
 
-        log.debug("Magic item name adjusted to \"{}\" for prefixId {} and suffixId {}", itemName, prefix, suffix);
     }
 
     private void parseSuperior(BitReader br) {
         short superiorQuality = br.readShort(3);
-        log.debug("superior quality item value: {}", superiorQuality);
     }
 
     private void parseInferior(Item.ItemBuilder itemBuilder, ItemScaffolding itemScaffolding, BitReader br) {
@@ -711,7 +680,6 @@ final class ItemParser {
             case 1 -> itemBuilder.itemName("Cracked " + itemScaffolding.getItemName());
             case 2 -> itemBuilder.itemName("Damaged " + itemScaffolding.getItemName());
             case 3 -> itemBuilder.itemName("Low Quality " + itemScaffolding.getItemName());
-            default -> log.error("unknown low quality value: {}", lowQuality);
         }
     }
 

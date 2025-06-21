@@ -17,14 +17,11 @@
  */
 package io.github.paladijn.d2rsavegameparser.txt;
 
-import org.slf4j.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Representation of a runeword from the runes.txt resource file.
@@ -32,7 +29,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @author Paladijn
  */
 public final class Runeword {
-    private static final Logger log = getLogger(Runeword.class);
 
     private final String name;
 
@@ -95,7 +91,6 @@ public final class Runeword {
             return false;
         }
         if (patch != null && patch.startsWith("D2R Ladder")) {
-            log.debug("DII:R Ladder runeword found, which is likely allowed in SP. Start: {}", patch);
         }
 
         for (Map.Entry<String, Integer> requiredRune: runes.entrySet()) {

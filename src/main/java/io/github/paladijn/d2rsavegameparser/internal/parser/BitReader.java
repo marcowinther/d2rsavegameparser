@@ -19,15 +19,12 @@ package io.github.paladijn.d2rsavegameparser.internal.parser;
 
 import io.github.paladijn.d2rsavegameparser.model.Item;
 import io.github.paladijn.d2rsavegameparser.parser.ParseException;
-import org.slf4j.Logger;
 
 import java.util.Map;
 
 import static java.util.Map.entry;
-import static org.slf4j.LoggerFactory.getLogger;
 
 public final class BitReader {
-    private static final Logger log = getLogger(BitReader.class);
 
     private final byte[] data;
     private int positionInBits;
@@ -84,7 +81,6 @@ public final class BitReader {
 
     public void moveToNextByteBoundary() {
         int newPosition = (positionInBits + 7) & (~7);
-        log.debug("moveToNextByteBoundary:: {} -> {}", positionInBits, newPosition);
         positionInBits = newPosition;
     }
 
@@ -194,7 +190,6 @@ public final class BitReader {
      */
     public void printBytes(Item item, int startIndex) {
         int endIndex = positionInBits / 8;
-        log.debug("printing bytes {} -> {} of {}", startIndex, endIndex, item);
         StringBuilder sbBytes = new StringBuilder();
         sbBytes.append(item)
                 .append("\n\t")
@@ -210,7 +205,6 @@ public final class BitReader {
         }
 
         sbBytes.append("};");
-        log.info(String.valueOf(sbBytes));
     }
 
     public byte getData(int i) {
